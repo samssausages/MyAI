@@ -2,12 +2,14 @@
 
 My Current AI Docker Compose Stack
 
-Using:
+## Using:
 
 Ollama
-
 OpenWebui
-
 Pipelines
-
 Searxng
+
+## Notes
+
+Setup for nvidia
+Setup for proxy using docker network (attach somethign like NPM to same docker network)
