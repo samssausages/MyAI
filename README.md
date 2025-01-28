@@ -12,6 +12,10 @@ Pipelines
 
 Searxng
 
+openai-edge-tts
+
+tika
+
 ## Notes
 
 Setup for nvidia
