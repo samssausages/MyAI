@@ -5,9 +5,8 @@ services:
     restart: unless-stopped
     environment:
       - OLLAMA_ORIGINS="*"
-      - OLLAMA_KEEP_ALIVE=15m
+      - OLLAMA_KEEP_ALIVE=30m
     volumes:
-    # - /mnt/user/appdata_disposable/localai/ollama:/root/.ollama
     - /mnt/user/ai_models/ollama:/root/.ollama
     networks:
       localai:
@@ -19,16 +18,60 @@ services:
             count: all
             capabilities: [gpu]             
 
+  openai-edge-tts:
+    image: travisvn/openai-edge-tts:latest
+    container_name: openai-edge-tts
+    restart: unless-stopped
+    environment:
+      - API_KEY=56165165gkkutfsij098r9jhr
+      - REQUIRE_API_KEY=True
+      - EXPAND_API=True
+      - PORT=5050
+      - DEFAULT_VOICE=en-US-AndrewNeural
+      - DEFAULT_LANGUAGE=en-US
+      - DEFAULT_RESPONSE_FORMAT=mp3
+      - DEFAULT_SPEED=1.2
+      - REMOVE_FILTER=False
+    ports:
+      - "5050:5050"
+    networks:
+      localai:
+
+  tika:
+    image: apache/tika:latest-full
+    container_name: tika
+    restart: unless-stopped
+    ports:
+      - "9998:9998"
+    networks:
+      localai:
+      
   pipelines:
     image: ghcr.io/open-webui/pipelines:main
     container_name: pipelines
     restart: unless-stopped
+    environment:
+      - USE_CUDA_DOCKER=true
+      - RESET_PIPELINES_DIR=false # Use to delete all in ./pipelines
+      # - PIPELINES_REQUIREMENTS_PATH=/app/pipelines/requirements.txt
+      # - PIPELINES_URLS=
+      # - PIPELINES_DIR=/app/pipelines
+      # - DATA_DIR=/app/pipelines/data
+      # - UPLOAD_DIR=/app/pipelines/data/uploads
+      # - CACHE_DIR=/app/pipelines/data/cache
     volumes:
     - /mnt/user/appdata/open-webui/pipelines:/app/pipelines
     # extra_hosts:
     #   - host.docker.internal:host-gateway
     networks:
       localai:    
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:cuda
@@ -40,9 +83,9 @@ services:
       - ENV=prod
       - WEBUI_AUTH=false
       ### UI settings ###
-      - WEBUI_NAME="My AI"
+      - WEBUI_NAME="MyAI"
       - ENABLE_SIGNUP=false
-      # - WEBUI_URL=https://ai.yourdomain.com
+      - WEBUI_URL=https://ai.yourdomain.com
       - OLLAMA_BASE_URL=http://ollama:11434
       - WHISPER_MODEL_AUTO_UPDATE=true
       ### Stablediffusion ###
@@ -134,6 +177,7 @@ services:
 networks:
   nginx_localai:
     driver: bridge
+    external: true
     name: nginx_localai
 
   localai:
