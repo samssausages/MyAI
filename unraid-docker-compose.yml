@@ -12,7 +12,7 @@ dservices:
       localai:
     labels:
       net.unraid.docker.icon: "/mnt/user/system/icons/ollama.png"
-      net.unraid.docker.webui: "https://ai.saraschfamily.com"       
+      net.unraid.docker.webui: "https://ai.yourdomain.com"       
     deploy:
       resources:
         reservations:
@@ -41,7 +41,7 @@ dservices:
       localai:
     labels:
       net.unraid.docker.icon: "/mnt/user/system/icons/ollama.png"
-      net.unraid.docker.webui: "https://ai.saraschfamily.com"             
+      net.unraid.docker.webui: "https://ai.yourdomain.com"             
 
   tika:
     image: apache/tika:latest-full
@@ -76,7 +76,7 @@ dservices:
       localai:    
     labels:
       net.unraid.docker.icon: "/mnt/user/system/icons/open-webui.png"
-      net.unraid.docker.webui: "https://ai.saraschfamily.com"    
+      net.unraid.docker.webui: "https://ai.yourdomain.com"    
     deploy:
       resources:
         reservations:
@@ -143,7 +143,7 @@ dservices:
       localai:
     labels:
       net.unraid.docker.icon: "/mnt/user/system/icons/open-webui.png"
-      net.unraid.docker.webui: "https://ai.saraschfamily.com"     
+      net.unraid.docker.webui: "https://ai.yourdomain.com"     
     deploy:
       resources:
         reservations:
