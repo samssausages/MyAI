@@ -1,0 +1,209 @@
+dservices:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: unless-stopped
+    environment:
+      - OLLAMA_ORIGINS="*"
+      - OLLAMA_KEEP_ALIVE=30m
+    volumes:
+    - /mnt/user/ai_models/ollama:/root/.ollama
+    networks:
+      localai:
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/ollama.png"
+      net.unraid.docker.webui: "https://ai.saraschfamily.com"       
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]             
+
+  openai-edge-tts:
+    image: travisvn/openai-edge-tts:latest
+    container_name: openai-edge-tts
+    restart: unless-stopped
+    environment:
+      - API_KEY=fagaa4wegerwagadagdsf
+      - REQUIRE_API_KEY=True
+      - EXPAND_API=True
+      - PORT=5050
+      - DEFAULT_VOICE=en-US-AndrewNeural
+      - DEFAULT_LANGUAGE=en-US
+      - DEFAULT_RESPONSE_FORMAT=mp3
+      - DEFAULT_SPEED=1.2
+      - REMOVE_FILTER=False
+    ports:
+      - "5050:5050"
+    networks:
+      localai:
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/ollama.png"
+      net.unraid.docker.webui: "https://ai.saraschfamily.com"             
+
+  tika:
+    image: apache/tika:latest-full
+    container_name: tika
+    restart: unless-stopped
+    ports:
+      - "9998:9998"
+    networks:
+      localai:
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/ollama.png"
+      net.unraid.docker.webui: "https://ai.saraschfamily.com"  
+      
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: pipelines
+    restart: unless-stopped
+    environment:
+      - USE_CUDA_DOCKER=true
+      - RESET_PIPELINES_DIR=false # Use to delete all in ./pipelines
+      # - PIPELINES_REQUIREMENTS_PATH=/app/pipelines/requirements.txt
+      # - PIPELINES_URLS=
+      # - PIPELINES_DIR=/app/pipelines
+      # - DATA_DIR=/app/pipelines/data
+      # - UPLOAD_DIR=/app/pipelines/data/uploads
+      # - CACHE_DIR=/app/pipelines/data/cache
+    volumes:
+    - /mnt/user/appdata/open-webui/pipelines:/app/pipelines
+    # extra_hosts:
+    #   - host.docker.internal:host-gateway
+    networks:
+      localai:    
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/open-webui.png"
+      net.unraid.docker.webui: "https://ai.saraschfamily.com"    
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: open-webui
+    restart: unless-stopped
+    environment:
+      ### Container Config ###
+      - USE_CUDA_DOCKER=true
+      - ENV=prod
+      - WEBUI_AUTH=false
+      ### UI settings ###
+      - WEBUI_NAME="MyAI"
+      - ENABLE_SIGNUP=false
+      - WEBUI_URL=https://ai.yourdomain.com
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_MODEL_AUTO_UPDATE=true
+      ### Stablediffusion ###
+      - ENABLE_IMAGE_GENERATION=true
+      - AUTOMATIC1111_BASE_URL=http://auto1111:7860
+      # - COMFYUI_BASE_URL=http://comfyui:8080
+      ### Web search & RAG ###
+      - ENABLE_RAG_WEB_SEARCH=true
+      - ENABLE_RAG_LOCAL_WEB_FETCH=false
+      - RAG_WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
+      - RAG_WEB_SEARCH_RESULT_COUNT=5
+      - RAG_WEB_SEARCH_CONCURRENT_REQUESTS=10
+      ### RAG ###
+      - DOCS_DIR=/data/docs
+      - RAG_TOP_K=5
+      - RAG_RELEVANCE_THRESHOLD=0.0
+      - ENABLE_RAG_HYBRID_SEARCH=False
+      - ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION=false
+      - RAG_EMBEDDING_ENGINE= # empty for local model or use ollama
+      - PDF_EXTRACT_IMAGES=False
+      - RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - RAG_EMBEDDING_MODEL_AUTO_UPDATE=true
+      - RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE=False
+      # - RAG_TEMPLATE=
+      # - RAG_RERANKING_MODEL=
+      # - RAG_RERANKING_MODEL_AUTO_UPDATE=true
+      # - RAG_RERANKING_MODEL_TRUST_REMOTE_CODE=false
+      - CHUNK_SIZE=1500
+      - CHUNK_OVERLAP=100
+      # - OPENAI_API_BASE_URL=
+      # - OPENAI_API_KEY=
+      - SCARF_NO_ANALYTICS=true
+      - DO_NOT_TRACK=true
+      - ANONYMIZED_TELEMETRY=true
+    volumes:
+    - /mnt/user/appdata/open-webui:/app/backend/data
+    - /mnt/user/media_home/docs:/data/docs
+    # extra_hosts:
+    #   - host.docker.internal:host-gateway
+    networks:
+      nginx_localai:
+      localai:
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/open-webui.png"
+      net.unraid.docker.webui: "https://ai.saraschfamily.com"     
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+  searxng_redis:
+    image: redis:alpine
+    container_name: searxng_redis
+    restart: unless-stopped
+#    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      - TZ=America/Chicago
+      - REDIS_HOST='searxng_redis'
+    tmpfs:
+      - /var/lib/redis 
+    networks:
+      searxng_redis:
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/redis.png"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    command: ["redis-server"]
+
+  searxng:
+    image: searxng/searxng
+    container_name: searxng
+    restart: unless-stopped
+    environment:
+      - TZ=America/Chicago
+      - SEARXNG_HOST=searxng
+      - INSTANCE_NAME=searxng
+      - SEARXNG_HOSTNAME=http://searxng
+      - SEARXNG_REDIS_URL=redis://searxng_redis:6379/0
+    volumes:
+      - /mnt/user/appdata/searxng:/etc/searxng
+    networks:
+      searxng_redis:
+      localai:
+    depends_on:
+      - searxng_redis
+    labels:
+      net.unraid.docker.icon: "/mnt/user/system/icons/searxng.png"
+          
+networks:
+  nginx_localai:
+    driver: bridge
+    external: true
+    name: nginx_localai
+
+  localai:
+    driver: bridge
+    name: localai
+
+  searxng_redis:
+    driver: bridge
+    internal: true
+    name: searxng_redis    
